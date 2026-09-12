@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#061b05">
+<title>Sarpa | AI Snake Safety</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="navbar">
+  <div class="logo"><span class="snake-logo">🐍</span><div><h2>Sarpa</h2><small>AI Snake Safety</small></div></div>
+  <nav><a href="#home">Home</a><a href="#identify">Identify</a><a href="#firstaid">First Aid</a><a href="#guide">Guide</a><a href="#hospitals">Hospitals</a></nav>
+  <select id="language"><option value="en">English</option><option value="hi">हिन्दी</option></select>
+</header>
+
+<section id="home" class="hero">
+  <div class="hero-content">
+    <span class="badge">🇮🇳 Made for Rural India</span>
+    <h1>Identify Snakes. <span>Save Lives.</span> Protect Nature.</h1>
+    <p>AI-powered snake identification, snakebite first-aid guidance and emergency assistance for communities across India.</p>
+    <div class="hero-buttons">
+      <button class="primary-btn" onclick="scrollToSection('identify')">📷 Identify Snake</button>
+      <button class="secondary-btn" onclick="scrollToSection('firstaid')">✚ First Aid Guide</button>
+    </div>
+    <div class="hero-features"><div>📡 Works Offline*</div><div>🌐 Local Languages</div><div>📍 Find Hospitals</div><div>🛡️ Protect Wildlife</div></div>
+  </div>
+  <div class="snake-visual"><div class="glow"></div><div class="cobra">🐍</div></div>
+</section>
+
+<section class="emergency-bar"><strong>🚨 If a snakebite has occurred, seek medical help immediately.</strong><a href="tel:108">📞 Emergency Call 108</a></section>
+
+<section class="features">
+  <div class="feature-card"><div class="feature-icon green">📷</div><h3>Identify Snake</h3><p>Take a photo or select one from your phone.</p><button onclick="openIdentifier()">Identify Now →</button></div>
+  <div class="feature-card"><div class="feature-icon red">✚</div><h3>First Aid Guide</h3><p>Learn what to do and what not to do after a suspected bite.</p><button onclick="scrollToSection('firstaid')">View Guide →</button></div>
+  <div class="feature-card"><div class="feature-icon blue">🏥</div><h3>Find Hospitals</h3><p>Use your location to find nearby healthcare facilities.</p><button onclick="scrollToSection('hospitals')">Find Now →</button></div>
+  <div class="feature-card"><div class="feature-icon yellow">📖</div><h3>Snake Guide</h3><p>Learn about commonly encountered Indian snakes.</p><button onclick="scrollToSection('guide')">Explore Guide →</button></div>
+  <div class="feature-card"><div class="feature-icon purple">☎</div><h3>Emergency Help</h3><p>Quickly access emergency services.</p><a href="tel:108">Emergency →</a></div>
+</section>
+
+<section id="identify" class="section">
+  <div class="section-title"><span>AI TECHNOLOGY</span><h2>Identify a Snake</h2><p>Take a photo of the snake or select an existing photograph from your phone.</p></div>
+
+  <div class="source-buttons">
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
+    <input type="file" id="galleryInput" accept="image/*" hidden>
+    <button class="source-btn camera-btn" onclick="openCamera()"><span>📷</span><strong>Take Photo</strong><small>Use phone camera</small></button>
+    <button class="source-btn gallery-btn" onclick="openGallery()"><span>🖼️</span><strong>Choose from Gallery</strong><small>Select existing photo</small></button>
+  </div>
+
+  <div class="desktop-upload" id="uploadArea"><div class="upload-icon">📁</div><h3>Or drag & drop a photo here</h3><p>JPG, PNG, WEBP • Up to 15 MB</p></div>
+
+  <div class="preview-container">
+    <div class="preview-area"><img id="preview" alt="Selected snake"><div id="previewPlaceholder"><span>🔍</span><p>Your snake photo will appear here</p></div></div>
+    <div id="photoInfo" class="photo-info hidden"><span id="photoName"></span><button onclick="clearPhoto()">✕ Remove</button></div>
+  </div>
+
+  <button class="analyze-btn" id="analyzeButton" onclick="analyzeSnake()">🤖 Analyze Snake</button>
+
+  <div id="result" class="result hidden">
+    <div class="result-header"><div><span>DEMO AI IDENTIFICATION</span><h2 id="snakeName">Indian Cobra</h2></div><div class="confidence"><strong id="confidence">92%</strong><small>Confidence</small></div></div>
+    <div class="result-grid"><div><span>Classification</span><strong id="classification">Venomous</strong></div><div><span>Danger Level</span><strong class="danger">HIGH</strong></div><div><span>Scientific Name</span><strong>Naja naja</strong></div></div>
+    <div class="warning">⚠️ This is a website demo, not a medical diagnosis. Never delay emergency treatment because of AI identification.</div>
+  </div>
+</section>
+
+<section id="firstaid" class="section firstaid-section">
+  <div class="section-title"><span>EMERGENCY INFORMATION</span><h2>Snakebite First Aid</h2><p>If someone has been bitten, do not wait for snake identification. Seek medical attention immediately.</p></div>
+  <div class="aid-grid">
+    <div class="aid-card do"><h3>✅ DO</h3><ul><li>Keep the person calm.</li><li>Keep the bitten limb still.</li><li>Remove rings, watches and tight items.</li><li>Reach a hospital immediately.</li><li>Remember the snake's appearance only if safe.</li></ul></div>
+    <div class="aid-card dont"><h3>❌ DON'T</h3><ul><li>Do not suck the venom.</li><li>Do not cut the wound.</li><li>Do not apply a tight tourniquet.</li><li>Do not try to catch the snake.</li><li>Do not delay hospital treatment.</li></ul></div>
+  </div>
+  <div class="emergency-large"><div><h3>Snakebite Emergency</h3><p>Do not wait for AI identification. Get professional medical help immediately.</p></div><a href="tel:108">📞 Call 108</a></div>
+</section>
+
+<section class="section"><div class="section-title"><span>SIMPLE & FAST</span><h2>How Sarpa Works</h2></div>
+<div class="steps"><div class="step"><div>1</div><h3>Capture</h3><p>Take a clear photo from a safe distance.</p></div><div class="arrow">→</div><div class="step"><div>2</div><h3>AI Analysis</h3><p>AI analyzes visual features.</p></div><div class="arrow">→</div><div class="step"><div>3</div><h3>Get Information</h3><p>See species and safety information.</p></div><div class="arrow">→</div><div class="step"><div>4</div><h3>Take Action</h3><p>Follow safety guidance and seek help.</p></div></div></section>
+
+<section id="guide" class="section guide-section">
+<div class="section-title"><span>INDIAN SNAKES</span><h2>Snake Guide</h2><p>Examples for the prototype.</p></div>
+<div class="snake-grid">
+<div class="snake-card"><div class="snake-image">🐍</div><h3>Indian Cobra</h3><span class="venomous">VENOMOUS</span><p>Medically important neurotoxic snake.</p></div>
+<div class="snake-card"><div class="snake-image">🐍</div><h3>Common Krait</h3><span class="venomous">VENOMOUS</span><p>Nocturnal medically important snake.</p></div>
+<div class="snake-card"><div class="snake-image">🐍</div><h3>Russell's Viper</h3><span class="venomous">VENOMOUS</span><p>Medically important viper.</p></div>
+<div class="snake-card"><div class="snake-image">🐍</div><h3>Rat Snake</h3><span class="nonvenomous">NON-VENOMOUS</span><p>Generally non-venomous.</p></div>
+</div></section>
+
+<section id="hospitals" class="section hospital-section">
+<div class="section-title"><span>EMERGENCY SERVICES</span><h2>Find Nearby Hospitals</h2><p>Allow location access and open a nearby hospital search in Maps.</p></div>
+<div class="location-box"><div class="location-icon">📍</div><div><h3>Find healthcare near you</h3><p id="locationStatus">Location access is required.</p></div><button onclick="findHospitals()">Find Hospitals</button></div>
+<div id="hospitalResults" class="hospital-results hidden"><h3>Nearby Healthcare Search</h3><p>Your location has been detected.</p><a id="mapsLink" target="_blank" class="maps-button">🗺️ Open Nearby Hospitals</a></div>
+</section>
+
+<section id="about" class="about"><div><span>SARPA</span><h2>Technology for safer communities and better coexistence with wildlife.</h2><p>Sarpa is a prototype designed to support snake identification, safety education and emergency access.</p></div><div class="about-cards"><div>📡<strong>Offline First*</strong><p>Planned for low-connectivity areas.</p></div><div>🗣️<strong>Local Languages</strong><p>Hindi support included in the prototype.</p></div><div>🐍<strong>Wildlife Protection</strong><p>Promotes safe coexistence and rescue.</p></div></div></section>
+
+<footer><div class="footer-logo">🐍 <strong>Sarpa</strong></div><p>AI Snake Identification & Snakebite Safety</p><p>© 2026 Sarpa — SIH Prototype</p><small>*Offline AI requires a local model; this ZIP currently contains the frontend demo.</small></footer>
+
+<script src="script.js"></script>
+</body>
+</html>
