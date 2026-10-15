@@ -1,5 +1,8 @@
 
-const API_URL = "https://sarpa-ai-snakesafety.onrender.com/predict";
+"use strict";
+
+const API_URL =
+  "https://sarpa-ai-snakesafety.onrender.com/predict";
 
 const cameraInput = document.getElementById("cameraInput");
 const galleryInput = document.getElementById("galleryInput");
@@ -22,19 +25,19 @@ function openGallery() {
 }
 
 cameraInput.addEventListener("change", function () {
-  if (this.files.length) {
+  if (this.files && this.files.length) {
     handleImage(this.files[0]);
   }
 });
 
 galleryInput.addEventListener("change", function () {
-  if (this.files.length) {
+  if (this.files && this.files.length) {
     handleImage(this.files[0]);
   }
 });
 
 function handleImage(file) {
-  if (!file.type.startsWith("image/")) {
+  if (!file || !file.type.startsWith("image/")) {
     alert("Please select a valid image.");
     return;
   }
@@ -56,6 +59,11 @@ function handleImage(file) {
     photoName.textContent = file.name;
   };
 
+  reader.onerror = function () {
+    alert("Could not read this image. Please select it again.");
+    selectedFile = null;
+  };
+
   reader.readAsDataURL(file);
   result.classList.add("hidden");
 }
@@ -64,7 +72,7 @@ function clearPhoto() {
   selectedFile = null;
   cameraInput.value = "";
   galleryInput.value = "";
-  preview.src = "";
+  preview.removeAttribute("src");
   preview.style.display = "none";
   placeholder.style.display = "block";
   photoInfo.classList.add("hidden");
@@ -84,12 +92,125 @@ uploadArea.addEventListener("drop", function (event) {
   event.preventDefault();
   uploadArea.style.background = "";
 
-  if (event.dataTransfer.files.length) {
-    handleImage(event.dataTransfer.files[0]);
+  const files = event.dataTransfer.files;
+  if (files && files.length) {
+    handleImage(files[0]);
   }
 });
 
-// Real AI analysis using your Render backend
+function setText(id, value, fallback) {
+  const element = document.getElementById(id);
+  if (!element) return;
+
+  if (value === undefined || value === null || value === "") {
+    element.textContent = fallback;
+  } else if (typeof value === "object") {
+    element.textContent = JSON.stringify(value);
+  } else {
+    element.textContent = String(value);
+  }
+}
+
+function firstValue(data, keys) {
+  for (const key of keys) {
+    const value = data && data[key];
+
+    if (value !== undefined && value !== null && value !== "") {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function formatConfidence(value) {
+  if (value === null || value === undefined || value === "") {
+    return "Unavailable";
+  }
+
+  if (typeof value === "string" && value.includes("%")) {
+    return value;
+  }
+
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return String(value);
+  }
+
+  const percentage = number <= 1 ? number * 100 : number;
+
+  if (percentage < 0 || percentage > 100) {
+    return "Unavailable";
+  }
+
+  return percentage.toFixed(1) + "%";
+}
+
+function displayAnalysis(data) {
+  const name = firstValue(data, [
+    "species",
+    "snake_name",
+    "snakeName",
+    "predicted_species",
+    "prediction",
+    "name"
+  ]);
+
+  const confidence = firstValue(data, [
+    "confidence",
+    "confidence_score",
+    "score"
+  ]);
+
+  const classification = firstValue(data, [
+    "classification",
+    "venomous_status",
+    "venomosity"
+  ]);
+
+  const danger = firstValue(data, [
+    "danger_level",
+    "dangerLevel",
+    "danger"
+  ]);
+
+  const scientificName = firstValue(data, [
+    "scientific_name",
+    "scientificName",
+    "scientific"
+  ]);
+
+  setText("snakeName", name, "Identification unavailable");
+  setText("confidence", formatConfidence(confidence), "Unavailable");
+  setText("classification", classification, "Unknown");
+  setText("dangerLevel", danger, "Unknown");
+  setText("scientificName", scientificName, "Unknown");
+
+  const message = firstValue(data, [
+    "message",
+    "warning",
+    "safety_advice",
+    "safetyAdvice",
+    "detail"
+  ]);
+
+  setText(
+    "analysisMessage",
+    message,
+    "AI predictions can be wrong. Keep away from the snake. " +
+    "Never delay medical care after a suspected bite."
+  );
+
+  const rawDetails = document.getElementById("rawResultDetails");
+  const rawResult = document.getElementById("rawResult");
+
+  if (rawDetails && rawResult) {
+    rawResult.textContent = JSON.stringify(data, null, 2);
+    rawDetails.classList.remove("hidden");
+  }
+}
+
 async function analyzeSnake() {
   if (!selectedFile) {
     alert("Please take a photo or select a photo first.");
@@ -100,11 +221,24 @@ async function analyzeSnake() {
   analyzeButton.textContent = "🤖 Analyzing...";
 
   result.classList.remove("hidden");
-  result.textContent =
-    "Analyzing your image. Please wait...";
+  setText("snakeName", "Analysis in progress...", "");
+  setText("confidence", "—", "");
+  setText("classification", "Pending", "");
+  setText("dangerLevel", "Pending", "");
+  setText("scientificName", "Pending", "");
+  setText(
+    "analysisMessage",
+    "Sending your image to the AI service. Please wait.",
+    ""
+  );
+
+  const rawDetails = document.getElementById("rawResultDetails");
+  if (rawDetails) rawDetails.classList.add("hidden");
 
   try {
     const formData = new FormData();
+
+    // The backend must accept an uploaded file named "file".
     formData.append("file", selectedFile);
 
     const response = await fetch(API_URL, {
@@ -112,15 +246,15 @@ async function analyzeSnake() {
       body: formData
     });
 
-    const rawResponse = await response.text();
-
+    const responseText = await response.text();
     let data;
 
     try {
-      data = JSON.parse(rawResponse);
+      data = JSON.parse(responseText);
     } catch {
       throw new Error(
-        "The server returned an invalid response. Please try again."
+        "The server returned an unreadable response. HTTP " +
+        response.status
       );
     }
 
@@ -132,26 +266,38 @@ async function analyzeSnake() {
             ? data.error
             : JSON.stringify(data);
 
-      throw new Error(
-        "Server error (" + response.status + "): " + detail
-      );
+      throw new Error("HTTP " + response.status + ": " + detail);
     }
 
-    // Display the actual response returned by the backend.
-    result.textContent =
-      "AI Analysis Result\n\n" +
-      JSON.stringify(data, null, 2) +
-      "\n\nSafety: Keep away from the snake. " +
-      "AI identification may be incorrect.";
+    if (!data || typeof data !== "object") {
+      throw new Error("The server returned an unexpected result.");
+    }
+
+    displayAnalysis(data);
 
   } catch (error) {
-    console.error("Snake analysis error:", error);
+    console.error("Sarpa AI analysis error:", error);
 
-    result.textContent =
-      "Analysis failed.\n\n" +
-      error.message +
-      "\n\nCheck your internet connection and backend configuration. " +
-      "If the problem continues, share this error.";
+    setText("snakeName", "Analysis failed", "");
+    setText("confidence", "—", "");
+    setText("classification", "Unknown", "");
+    setText("dangerLevel", "Unknown", "");
+    setText("scientificName", "Unknown", "");
+
+    let message = error.message || "An unknown error occurred.";
+
+    if (error instanceof TypeError) {
+      message =
+        "Could not connect to the AI service. Check your internet " +
+        "connection and backend CORS settings. Details: " +
+        error.message;
+    }
+
+    setText(
+      "analysisMessage",
+      message + " If this continues, check the backend logs.",
+      ""
+    );
 
   } finally {
     analyzeButton.disabled = false;
@@ -169,9 +315,14 @@ function openIdentifier() {
 }
 
 function scrollToSection(id) {
-  document.getElementById(id)?.scrollIntoView({
-    behavior: "smooth"
-  });
+  const section = document.getElementById(id);
+
+  if (section) {
+    section.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }
 }
 
 function findHospitals() {
@@ -182,7 +333,8 @@ function findHospitals() {
   status.textContent = "Requesting your location...";
 
   if (!navigator.geolocation) {
-    status.textContent = "Location is not supported by this browser.";
+    status.textContent =
+      "Location is not supported by this browser.";
     return;
   }
 
@@ -194,13 +346,15 @@ function findHospitals() {
       status.textContent = "Location detected successfully.";
 
       link.href =
-        `https://www.google.com/maps/search/hospital/@${latitude},${longitude},14z`;
+        "https://www.google.com/maps/search/hospital/@" +
+        latitude + "," + longitude + ",14z";
 
       results.classList.remove("hidden");
     },
     function () {
       status.textContent =
-        "Location permission denied. Enable location access or search for a hospital manually.";
+        "Location permission denied. Allow location access " +
+        "or search for a hospital manually.";
     },
     {
       enableHighAccuracy: true,
@@ -216,7 +370,7 @@ if (languageSelect) {
   languageSelect.addEventListener("change", function (event) {
     const hindi = event.target.value === "hi";
     const heading = document.querySelector(".hero h1");
-    const description = document.querySelector(".hero p");
+    const description = document.querySelector(".hero-content > p");
 
     if (heading) {
       heading.innerHTML = hindi
@@ -227,7 +381,7 @@ if (languageSelect) {
     if (description) {
       description.textContent = hindi
         ? "AI की मदद से साँप की पहचान, साँप के काटने पर प्राथमिक सहायता और आपातकालीन सहायता।"
-        : "AI-powered snake identification, snakebite first-aid guidance and emergency assistance for communities across India.";
+        : "AI-assisted snake identification, snakebite first-aid guidance, and emergency assistance for communities across India.";
     }
   });
 }
