@@ -1,8 +1,7 @@
 
 "use strict";
 
-const API_URL =
-  "https://sarpa-ai-snakesafety.onrender.com/predict";
+const API_URL = "https://sarpa-ai-snakesafety.onrender.com/predict";
 
 const cameraInput = document.getElementById("cameraInput");
 const galleryInput = document.getElementById("galleryInput");
@@ -13,375 +12,282 @@ const photoName = document.getElementById("photoName");
 const uploadArea = document.getElementById("uploadArea");
 const result = document.getElementById("result");
 const analyzeButton = document.getElementById("analyzeButton");
+const statusMessage = document.getElementById("statusMessage");
 
 let selectedFile = null;
 
 function openCamera() {
-  cameraInput.click();
+    cameraInput.click();
 }
 
 function openGallery() {
-  galleryInput.click();
+    galleryInput.click();
 }
 
 cameraInput.addEventListener("change", function () {
-  if (this.files && this.files.length) {
-    handleImage(this.files[0]);
-  }
+    if (this.files && this.files.length > 0) {
+        handleImage(this.files[0]);
+    }
 });
 
 galleryInput.addEventListener("change", function () {
-  if (this.files && this.files.length) {
-    handleImage(this.files[0]);
-  }
+    if (this.files && this.files.length > 0) {
+        handleImage(this.files[0]);
+    }
 });
 
 function handleImage(file) {
-  if (!file || !file.type.startsWith("image/")) {
-    alert("Please select a valid image.");
-    return;
-  }
+    const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif"
+    ];
 
-  if (file.size > 15 * 1024 * 1024) {
-    alert("Image is too large. Please select an image under 15 MB.");
-    return;
-  }
+    if (!allowedTypes.includes(file.type)) {
+        alert("Please select a JPG, PNG, WEBP, or GIF image.");
+        return;
+    }
 
-  selectedFile = file;
+    if (file.size > 8 * 1024 * 1024) {
+        alert("Image is too large. Please select an image under 8 MB.");
+        return;
+    }
 
-  const reader = new FileReader();
+    selectedFile = file;
 
-  reader.onload = function (event) {
-    preview.src = event.target.result;
-    preview.style.display = "block";
-    placeholder.style.display = "none";
-    photoInfo.classList.remove("hidden");
-    photoName.textContent = file.name;
-  };
+    const reader = new FileReader();
 
-  reader.onerror = function () {
-    alert("Could not read this image. Please select it again.");
-    selectedFile = null;
-  };
+    reader.onload = function (event) {
+        preview.src = event.target.result;
+        preview.style.display = "block";
+        placeholder.classList.add("hidden");
+        photoInfo.classList.remove("hidden");
+        photoName.textContent = file.name;
 
-  reader.readAsDataURL(file);
-  result.classList.add("hidden");
+        result.classList.add("hidden");
+        statusMessage.textContent = "Image selected. Ready for analysis.";
+    };
+
+    reader.onerror = function () {
+        alert("Could not read this image. Please select another one.");
+    };
+
+    reader.readAsDataURL(file);
 }
 
 function clearPhoto() {
-  selectedFile = null;
-  cameraInput.value = "";
-  galleryInput.value = "";
-  preview.removeAttribute("src");
-  preview.style.display = "none";
-  placeholder.style.display = "block";
-  photoInfo.classList.add("hidden");
-  result.classList.add("hidden");
+    selectedFile = null;
+
+    cameraInput.value = "";
+    galleryInput.value = "";
+    preview.removeAttribute("src");
+    preview.style.display = "none";
+
+    placeholder.classList.remove("hidden");
+    photoInfo.classList.add("hidden");
+    result.classList.add("hidden");
+
+    statusMessage.textContent = "Photo removed.";
 }
 
 uploadArea.addEventListener("dragover", function (event) {
-  event.preventDefault();
-  uploadArea.style.background = "#edf9e9";
+    event.preventDefault();
+    uploadArea.style.background = "#edf9e9";
 });
 
 uploadArea.addEventListener("dragleave", function () {
-  uploadArea.style.background = "";
+    uploadArea.style.background = "";
 });
 
 uploadArea.addEventListener("drop", function (event) {
-  event.preventDefault();
-  uploadArea.style.background = "";
+    event.preventDefault();
+    uploadArea.style.background = "";
 
-  const files = event.dataTransfer.files;
-  if (files && files.length) {
-    handleImage(files[0]);
-  }
+    const file = event.dataTransfer.files[0];
+
+    if (file) {
+        handleImage(file);
+    }
 });
 
-function setText(id, value, fallback) {
-  const element = document.getElementById(id);
-  if (!element) return;
-
-  if (value === undefined || value === null || value === "") {
-    element.textContent = fallback;
-  } else if (typeof value === "object") {
-    element.textContent = JSON.stringify(value);
-  } else {
-    element.textContent = String(value);
-  }
-}
-
-function firstValue(data, keys) {
-  for (const key of keys) {
-    const value = data && data[key];
-
-    if (value !== undefined && value !== null && value !== "") {
-      return value;
-    }
-  }
-
-  return null;
-}
-
-function formatConfidence(value) {
-  if (value === null || value === undefined || value === "") {
-    return "Unavailable";
-  }
-
-  if (typeof value === "string" && value.includes("%")) {
-    return value;
-  }
-
-  const number = Number(value);
-
-  if (!Number.isFinite(number)) {
-    return String(value);
-  }
-
-  const percentage = number <= 1 ? number * 100 : number;
-
-  if (percentage < 0 || percentage > 100) {
-    return "Unavailable";
-  }
-
-  return percentage.toFixed(1) + "%";
-}
-
-function displayAnalysis(data) {
-  const name = firstValue(data, [
-    "species",
-    "snake_name",
-    "snakeName",
-    "predicted_species",
-    "prediction",
-    "name"
-  ]);
-
-  const confidence = firstValue(data, [
-    "confidence",
-    "confidence_score",
-    "score"
-  ]);
-
-  const classification = firstValue(data, [
-    "classification",
-    "venomous_status",
-    "venomosity"
-  ]);
-
-  const danger = firstValue(data, [
-    "danger_level",
-    "dangerLevel",
-    "danger"
-  ]);
-
-  const scientificName = firstValue(data, [
-    "scientific_name",
-    "scientificName",
-    "scientific"
-  ]);
-
-  setText("snakeName", name, "Identification unavailable");
-  setText("confidence", formatConfidence(confidence), "Unavailable");
-  setText("classification", classification, "Unknown");
-  setText("dangerLevel", danger, "Unknown");
-  setText("scientificName", scientificName, "Unknown");
-
-  const message = firstValue(data, [
-    "message",
-    "warning",
-    "safety_advice",
-    "safetyAdvice",
-    "detail"
-  ]);
-
-  setText(
-    "analysisMessage",
-    message,
-    "AI predictions can be wrong. Keep away from the snake. " +
-    "Never delay medical care after a suspected bite."
-  );
-
-  const rawDetails = document.getElementById("rawResultDetails");
-  const rawResult = document.getElementById("rawResult");
-
-  if (rawDetails && rawResult) {
-    rawResult.textContent = JSON.stringify(data, null, 2);
-    rawDetails.classList.remove("hidden");
-  }
-}
-
 async function analyzeSnake() {
-  if (!selectedFile) {
-    alert("Please take a photo or select a photo first.");
-    return;
-  }
+    if (!selectedFile) {
+        alert("Please take a photo or select a photo first.");
+        return;
+    }
 
-  analyzeButton.disabled = true;
-  analyzeButton.textContent = "🤖 Analyzing...";
+    const originalText = analyzeButton.textContent;
 
-  result.classList.remove("hidden");
-  setText("snakeName", "Analysis in progress...", "");
-  setText("confidence", "—", "");
-  setText("classification", "Pending", "");
-  setText("dangerLevel", "Pending", "");
-  setText("scientificName", "Pending", "");
-  setText(
-    "analysisMessage",
-    "Sending your image to the AI service. Please wait.",
-    ""
-  );
-
-  const rawDetails = document.getElementById("rawResultDetails");
-  if (rawDetails) rawDetails.classList.add("hidden");
-
-  try {
-    const formData = new FormData();
-
-    // The backend must accept an uploaded file named "file".
-    formData.append("file", selectedFile);
-
-    const response = await fetch(API_URL, {
-      method: "POST",
-      body: formData
-    });
-
-    const responseText = await response.text();
-    let data;
+    analyzeButton.disabled = true;
+    analyzeButton.textContent = "🤖 Analyzing...";
+    statusMessage.textContent = "Uploading image and requesting AI analysis...";
 
     try {
-      data = JSON.parse(responseText);
-    } catch {
-      throw new Error(
-        "The server returned an unreadable response. HTTP " +
-        response.status
-      );
+        const formData = new FormData();
+
+        // Must match the FastAPI parameter: file: UploadFile = File(...)
+        formData.append("file", selectedFile);
+
+        const response = await fetch(API_URL, {
+            method: "POST",
+            body: formData
+        });
+
+        let data;
+
+        try {
+            data = await response.json();
+        } catch {
+            throw new Error("The server returned an unreadable response.");
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                data.detail || `Request failed with status ${response.status}.`
+            );
+        }
+
+        displayResult(data);
+        statusMessage.textContent = "Analysis finished. Treat the result cautiously.";
+
+    } catch (error) {
+        console.error("Snake analysis error:", error);
+
+        statusMessage.textContent = "Analysis failed.";
+
+        if (error instanceof TypeError) {
+            alert(
+                "Could not connect to the API. Check your internet connection, " +
+                "the Render service status, and the backend CORS settings."
+            );
+        } else {
+            alert("Could not analyze the image: " + error.message);
+        }
+    } finally {
+        analyzeButton.disabled = false;
+        analyzeButton.textContent = originalText;
+    }
+}
+
+function displayResult(data) {
+    const snakeVisible = data.snake_visible === true;
+
+    document.getElementById("snakeName").textContent =
+        snakeVisible && data.suggested_identification
+            ? data.suggested_identification
+            : "No clear snake detected";
+
+    document.getElementById("confidence").textContent =
+        data.confidence || "low";
+
+    document.getElementById("snakeVisible").textContent =
+        snakeVisible ? "Possibly visible" : "Not clearly visible";
+
+    document.getElementById("classification").textContent =
+        data.venom_risk || "not established";
+
+    let riskLabel = "UNKNOWN RISK";
+
+    if (data.venom_risk === "potentially venomous") {
+        riskLabel = "POTENTIAL RISK";
+    } else if (data.venom_risk === "snake not clearly visible") {
+        riskLabel = "NOT IDENTIFIED";
     }
 
-    if (!response.ok) {
-      const detail =
-        typeof data.detail === "string"
-          ? data.detail
-          : typeof data.error === "string"
-            ? data.error
-            : JSON.stringify(data);
+    document.getElementById("dangerLevel").textContent = riskLabel;
 
-      throw new Error("HTTP " + response.status + ": " + detail);
+    // The backend does not verify a scientific name, so do not invent one.
+    document.getElementById("scientificName").textContent = "Not verified";
+
+    document.getElementById("analysisMessage").textContent =
+        data.explanation || "The image could not be identified reliably.";
+
+    document.getElementById("safetyAdvice").textContent =
+        data.safety_advice ||
+        "Keep away from the snake and contact a trained wildlife rescuer.";
+
+    const warning = document.querySelector(".warning");
+
+    if (warning && data.disclaimer) {
+        warning.textContent = data.disclaimer;
     }
 
-    if (!data || typeof data !== "object") {
-      throw new Error("The server returned an unexpected result.");
-    }
+    document.getElementById("rawResult").textContent =
+        JSON.stringify(data, null, 2);
 
-    displayAnalysis(data);
-
-  } catch (error) {
-    console.error("Sarpa AI analysis error:", error);
-
-    setText("snakeName", "Analysis failed", "");
-    setText("confidence", "—", "");
-    setText("classification", "Unknown", "");
-    setText("dangerLevel", "Unknown", "");
-    setText("scientificName", "Unknown", "");
-
-    let message = error.message || "An unknown error occurred.";
-
-    if (error instanceof TypeError) {
-      message =
-        "Could not connect to the AI service. Check your internet " +
-        "connection and backend CORS settings. Details: " +
-        error.message;
-    }
-
-    setText(
-      "analysisMessage",
-      message + " If this continues, check the backend logs.",
-      ""
-    );
-
-  } finally {
-    analyzeButton.disabled = false;
-    analyzeButton.textContent = "🤖 Analyze Snake";
-
+    result.classList.remove("hidden");
     result.scrollIntoView({
-      behavior: "smooth",
-      block: "center"
+        behavior: "smooth",
+        block: "start"
     });
-  }
 }
 
 function openIdentifier() {
-  scrollToSection("identify");
+    scrollToSection("identify");
 }
 
 function scrollToSection(id) {
-  const section = document.getElementById(id);
+    const section = document.getElementById(id);
 
-  if (section) {
-    section.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
-  }
+    if (section) {
+        section.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    }
 }
 
 function findHospitals() {
-  const status = document.getElementById("locationStatus");
-  const results = document.getElementById("hospitalResults");
-  const link = document.getElementById("mapsLink");
+    const status = document.getElementById("locationStatus");
+    const link = document.getElementById("mapsLink");
 
-  status.textContent = "Requesting your location...";
-
-  if (!navigator.geolocation) {
-    status.textContent =
-      "Location is not supported by this browser.";
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    function (position) {
-      const latitude = position.coords.latitude;
-      const longitude = position.coords.longitude;
-
-      status.textContent = "Location detected successfully.";
-
-      link.href =
-        "https://www.google.com/maps/search/hospital/@" +
-        latitude + "," + longitude + ",14z";
-
-      results.classList.remove("hidden");
-    },
-    function () {
-      status.textContent =
-        "Location permission denied. Allow location access " +
-        "or search for a hospital manually.";
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 60000
+    if (!navigator.geolocation) {
+        status.textContent =
+            "Location is not supported by this browser. Open Google Maps and search for nearby hospitals.";
+        link.href = "https://www.google.com/maps/search/hospitals+near+me/";
+        link.classList.remove("hidden");
+        return;
     }
-  );
+
+    status.textContent = "Requesting location permission...";
+
+    navigator.geolocation.getCurrentPosition(
+        function (position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+
+            link.href =
+                "https://www.google.com/maps/search/hospitals/@" +
+                latitude + "," + longitude + ",14z";
+
+            link.classList.remove("hidden");
+            status.textContent =
+                "Location found. Open the map and choose an appropriate hospital.";
+        },
+        function () {
+            status.textContent =
+                "Location permission was denied. You can still search for hospitals on Google Maps.";
+
+            link.href = "https://www.google.com/maps/search/hospitals+near+me/";
+            link.classList.remove("hidden");
+        },
+        {
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 60000
+        }
+    );
 }
 
-const languageSelect = document.getElementById("language");
+document.getElementById("language").addEventListener("change", function (event) {
+    const isHindi = event.target.value === "hi";
 
-if (languageSelect) {
-  languageSelect.addEventListener("change", function (event) {
-    const hindi = event.target.value === "hi";
-    const heading = document.querySelector(".hero h1");
-    const description = document.querySelector(".hero-content > p");
+    document.querySelector(".hero h1").innerHTML = isHindi
+        ? 'साँप पहचानें।<br><span>जान बचाएँ।</span><br>प्रकृति बचाएँ।'
+        : 'Identify Snakes.<br><span>Save Lives.</span><br>Protect Nature.';
 
-    if (heading) {
-      heading.innerHTML = hindi
-        ? 'साँप पहचानें। <span>जान बचाएँ।</span> प्रकृति बचाएँ।'
-        : 'Identify Snakes. <span>Save Lives.</span> Protect Nature.';
-    }
-
-    if (description) {
-      description.textContent = hindi
-        ? "AI की मदद से साँप की पहचान, साँप के काटने पर प्राथमिक सहायता और आपातकालीन सहायता।"
-        : "AI-assisted snake identification, snakebite first-aid guidance, and emergency assistance for communities across India.";
-    }
-  });
-}
+    document.querySelector(".hero-content > p").textContent = isHindi
+        ? "AI की मदद से साँप की फोटो का सावधानीपूर्वक विश्लेषण और सुरक्षा संबंधी जानकारी प्राप्त करें।"
+        : "Educational snake photo analysis, safety guidance, and emergency resources for communities across India.";
+});
